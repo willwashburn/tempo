@@ -1,7 +1,9 @@
-import axios from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
 
-const axiosClient = axios.create({ baseURL: 'https://api.trainwithpivot.com/v1/' });
-
+const axiosClient = axios.create({
+  baseURL: 'https://api.trainwithpivot.com/v1/',
+  validateStatus: () => true,
+});
 export type TempoLoginCredentials = {
   password: string;
   email: string;
@@ -57,7 +59,7 @@ type TempoPreferences = {
   };
 };
 
-export type SuccessfulLoginResponse = {
+export type SuccessfulTempoLoginResponse = {
   data: {
     active: boolean;
     allow_followers: boolean;
@@ -87,7 +89,7 @@ export type SuccessfulLoginResponse = {
   };
 };
 
-export type FailedLoginResponse = {
+export type FailedTempoLoginResponse = {
   errors: {
     status: number;
     title: string;
@@ -95,36 +97,40 @@ export type FailedLoginResponse = {
   }[];
 };
 
-export type LoginResponse = SuccessfulLoginResponse | FailedLoginResponse;
+export type LoginResponse = SuccessfulTempoLoginResponse | FailedTempoLoginResponse;
 
 export class Tempo {
-  async login(loginCredentials: TempoLoginCredentials): Promise<LoginResponse> {
-    try {
-      const response = await axiosClient.request<LoginResponse>({
-        method: 'POST',
-        url: 'login',
-        data: loginCredentials,
-        headers: {
-          'Content-Type': 'application/json',
-          Host: 'api.trainwithpivot.com',
-          'Tempo-iOS-User-Id': '',
-          Accept: '*/*',
-          'User-Agent':
-            'Tempo/1.41.1(com.core-tech-fitness.tempo; build:2; iOS 14.4.2) Alamofire/5.4.0 WillWashburn.com',
-        },
-      });
+  async login(
+    loginCredentials: TempoLoginCredentials,
+  ): Promise<LoginResponse & { wasSuccessful: boolean }> {
+    return await this.makeRequest<LoginResponse>({
+      method: 'POST',
+      url: 'login',
+      data: loginCredentials,
+    });
+  }
 
-      return response.data;
-    } catch (error) {
-      return {
-        errors: [
-          {
-            status: 500,
-            title: String(error),
-            detail: 'A fatal error',
-          },
-        ],
-      };
-    }
+  private async makeRequest<T>(
+    config: AxiosRequestConfig,
+  ): Promise<T & { wasSuccessful: boolean }> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    config.headers = {
+      ...(config.headers || {}),
+      ...{
+        'Content-Type': 'application/json',
+        Host: 'api.trainwithpivot.com',
+        'Tempo-iOS-User-Id': '',
+        Accept: '*/*',
+        'User-Agent':
+          'Tempo/1.41.1(com.core-tech-fitness.tempo; build:2; iOS 14.4.2) Alamofire/5.4.0 com.github.willwashburn.tempo/0.0.1',
+      },
+    };
+
+    const response = await axiosClient.request<T>(config);
+
+    return {
+      ...response.data,
+      wasSuccessful: !(response.status < 200 || response.status >= 300),
+    };
   }
 }

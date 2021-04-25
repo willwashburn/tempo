@@ -8,6 +8,7 @@ test('Login works with correct password', async () => {
   const response = await tempo.login({ email: USERNAME, password: PASSWORD });
 
   expect(response).toHaveProperty('data');
+  expect(response.wasSuccessful).toBeTruthy();
 });
 
 test('Login fails with bad password', async () => {
@@ -17,5 +18,6 @@ test('Login fails with bad password', async () => {
   const tempo = new Tempo();
   const response = await tempo.login({ email: USERNAME, password: PASSWORD });
 
+  expect(response.wasSuccessful).toBeFalsy();
   expect(response).toHaveProperty('errors');
 });

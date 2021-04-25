@@ -31,5 +31,12 @@ module.exports = {
       functions: false,
       typedefs: false
     }],
+    "max-len": ["warn", 100, 2, {
+        ignoreUrls: true,
+        ignoreComments: false,
+        ignoreRegExpLiterals: true,
+        ignoreStrings: true,
+       ignoreTemplateLiterals: true,
+     }],
   }
 }
