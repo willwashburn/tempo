@@ -5,6 +5,11 @@ export type LoginCredentials = {
   email: string;
 };
 
+export type AuthenticatedUser = {
+  id: string;
+  token: string;
+};
+
 type TempoExercise = {
   exercise_id: string;
   exercise_name: string;

@@ -1,19 +1,13 @@
 import axios, { AxiosRequestConfig } from 'axios';
 import { LoginCredentials, LoginResponse } from './types';
+import { AuthenticatedUser } from './types/login';
+import { WorkoutsRequest, WorkoutsResponse } from './types/workouts';
+import { UserAgent } from './user-agent';
 
 const axiosClient = axios.create({
   baseURL: 'https://api.trainwithpivot.com/v1/',
   validateStatus: () => true,
 });
-
-const defaultHeaders = {
-  'Content-Type': 'application/json',
-  Host: 'api.trainwithpivot.com',
-  'Tempo-iOS-User-Id': '',
-  Accept: '*/*',
-  'User-Agent':
-    'Tempo/1.41.1(com.core-tech-fitness.tempo; build:2; iOS 14.4.2) Alamofire/5.4.0 com.github.willwashburn.tempo/0.0.1',
-};
 
 type TempoResponse = {
   wasSuccessful: boolean;
@@ -28,11 +22,34 @@ export class Tempo {
     });
   }
 
+  async workouts(
+    user: AuthenticatedUser,
+    timeframe: WorkoutsRequest,
+  ): Promise<WorkoutsResponse & TempoResponse> {
+    return await this.makeAuthenticatedRequest<WorkoutsResponse>(user, {
+      method: 'GET',
+      url: '/me/workouts',
+      params: timeframe,
+    });
+  }
+
+  private makeAuthenticatedRequest<T>(
+    user: AuthenticatedUser,
+    config: AxiosRequestConfig,
+  ): Promise<T & TempoResponse> {
+    config.headers = { Authorization: `Bearer ${user.token}`, 'Tempo-iOS-User-Id': user.id };
+
+    return this.makeRequest(config);
+  }
+
   private async makeRequest<T>(config: AxiosRequestConfig): Promise<T & TempoResponse> {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     config.headers = {
       ...(config.headers || {}),
-      ...defaultHeaders,
+      ...{
+        'User-Agent': UserAgent,
+        'Content-Type': 'application/json',
+      },
     };
 
     const response = await axiosClient.request<T>(config);
