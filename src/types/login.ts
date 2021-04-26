@@ -1,13 +1,8 @@
+import { Media } from './media';
+
 export type LoginCredentials = {
   password: string;
   email: string;
-};
-
-type TempoMedia = {
-  id: string;
-  index: number;
-  type_id: number;
-  url: string;
 };
 
 type TempoExercise = {
@@ -70,7 +65,7 @@ export type SuccessfulLoginResponse = {
     last_login_on_mobile: string;
     last_login_on_tempo: string;
     last_name: string;
-    media: TempoMedia[];
+    media: Media[];
     performance: { exercises: Record<string, TempoExercise> };
     preferences: TempoPreferences;
     recharge_customer_id: number;
