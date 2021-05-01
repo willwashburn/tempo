@@ -1,6 +1,6 @@
 {
   "name": "tempo-fit-api",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "A SDK to the unofficial Tempo.fit api",
   "main": "index.js",
   "scripts": {
@@ -19,7 +19,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/willwashburn/tempo/issues"
   },
