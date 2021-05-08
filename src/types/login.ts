@@ -90,5 +90,3 @@ export type FailedLoginResponse = {
     detail: string;
   }[];
 };
-
-export type LoginResponse = SuccessfulLoginResponse | FailedLoginResponse;

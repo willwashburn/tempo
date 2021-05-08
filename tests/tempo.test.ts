@@ -1,5 +1,4 @@
 import { Tempo } from '../src';
-import { AuthenticatedUser } from '../src/types/login';
 import { WorkoutsRequest } from '../src/types/workouts';
 
 test('Login works with correct password', async () => {
@@ -9,7 +8,7 @@ test('Login works with correct password', async () => {
   const tempo = new Tempo();
   const response = await tempo.login({ email: USERNAME, password: PASSWORD });
 
-  expect(response).toHaveProperty('data');
+  expect(response.body).toHaveProperty('data');
   expect(response.wasSuccessful).toBeTruthy();
 });
 
@@ -21,13 +20,23 @@ test('Login fails with bad password', async () => {
   const response = await tempo.login({ email: USERNAME, password: PASSWORD });
 
   expect(response.wasSuccessful).toBeFalsy();
-  expect(response).toHaveProperty('errors');
+  expect(response.body).toHaveProperty('errors');
 });
 
 test('Getting workouts works', async () => {
-  const user: AuthenticatedUser = {
-    id: process.env.TEMPO_USER_ID || '',
-    token: process.env.TEMPO_USER_TOKEN || '',
+  const USERNAME = process.env.TEMPO_USERNAME || '';
+  const PASSWORD = process.env.TEMPO_PASSWORD || '';
+
+  const tempo = new Tempo();
+  const loggedInResponse = await tempo.login({ email: USERNAME, password: PASSWORD });
+
+  if (!loggedInResponse.wasSuccessful) {
+    throw new Error('Not logged in, test failed');
+  }
+
+  const user = {
+    id: loggedInResponse.body.data.id,
+    token: loggedInResponse.body.data.token,
   };
 
   const timeframe: WorkoutsRequest = {
@@ -35,9 +44,8 @@ test('Getting workouts works', async () => {
     end_time: new Date('2021/05/01').toISOString(),
   };
 
-  const tempo = new Tempo();
-  const response = await tempo.workouts(user, timeframe);
+  const workouts = await tempo.workouts(user, timeframe);
 
-  expect(response.wasSuccessful).toBeTruthy();
-  expect(response).toHaveProperty('data');
+  expect(workouts.wasSuccessful).toBeTruthy();
+  expect(workouts.body).toHaveProperty('data');
 });

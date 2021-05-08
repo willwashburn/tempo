@@ -1,21 +1,32 @@
 import axios, { AxiosRequestConfig } from 'axios';
-import { LoginCredentials, LoginResponse } from './types';
-import { AuthenticatedUser } from './types/login';
-import { WorkoutsRequest, WorkoutsResponse } from './types/workouts';
+import {
+  AuthenticatedUser,
+  FailedLoginResponse,
+  FailedWorkoutsResponse,
+  LoginCredentials,
+  SuccessfulLoginResponse,
+  SuccessfulWorkoutsResponse,
+  TempoResponse,
+  WorkoutsRequest,
+} from './types';
+
 import { UserAgent } from './user-agent';
 
 const axiosClient = axios.create({
   baseURL: 'https://api.trainwithpivot.com/v1/',
+
+  // Making the validateStatus function a noop so that we can set our own failure types
   validateStatus: () => true,
 });
 
-type TempoResponse = {
-  wasSuccessful: boolean;
-};
+// This is just to help declutter some of the response types for the below functions
+type Response<S, F> = Promise<TempoResponse<S, F>>;
 
 export class Tempo {
-  async login(loginCredentials: LoginCredentials): Promise<LoginResponse & TempoResponse> {
-    return await this.makeRequest<LoginResponse>({
+  async login(
+    loginCredentials: LoginCredentials,
+  ): Response<SuccessfulLoginResponse, FailedLoginResponse> {
+    return await this.makeRequest<SuccessfulLoginResponse, FailedLoginResponse>({
       method: 'POST',
       url: 'login',
       data: loginCredentials,
@@ -25,24 +36,27 @@ export class Tempo {
   async workouts(
     user: AuthenticatedUser,
     timeframe: WorkoutsRequest,
-  ): Promise<WorkoutsResponse & TempoResponse> {
-    return await this.makeAuthenticatedRequest<WorkoutsResponse>(user, {
-      method: 'GET',
-      url: '/me/workouts',
-      params: timeframe,
-    });
+  ): Response<SuccessfulWorkoutsResponse, FailedWorkoutsResponse> {
+    return await this.makeAuthenticatedRequest<SuccessfulWorkoutsResponse, FailedWorkoutsResponse>(
+      user,
+      {
+        method: 'GET',
+        url: '/me/workouts',
+        params: timeframe,
+      },
+    );
   }
 
-  private makeAuthenticatedRequest<T>(
+  private makeAuthenticatedRequest<S, F>(
     user: AuthenticatedUser,
     config: AxiosRequestConfig,
-  ): Promise<T & TempoResponse> {
+  ): Response<S, F> {
     config.headers = { Authorization: `Bearer ${user.token}`, 'Tempo-iOS-User-Id': user.id };
 
-    return this.makeRequest(config);
+    return this.makeRequest<S, F>(config);
   }
 
-  private async makeRequest<T>(config: AxiosRequestConfig): Promise<T & TempoResponse> {
+  private async makeRequest<S, F>(config: AxiosRequestConfig): Response<S, F> {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     config.headers = {
       ...(config.headers || {}),
@@ -52,11 +66,20 @@ export class Tempo {
       },
     };
 
-    const response = await axiosClient.request<T>(config);
+    const response = await axiosClient.request(config);
+
+    const wasSuccessful = !(response.status < 200 || response.status >= 300);
+
+    if (wasSuccessful) {
+      return {
+        wasSuccessful,
+        body: response.data as S,
+      };
+    }
 
     return {
-      ...response.data,
-      wasSuccessful: !(response.status < 200 || response.status >= 300),
+      wasSuccessful,
+      body: response.data as F,
     };
   }
 }

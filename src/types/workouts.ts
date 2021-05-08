@@ -105,10 +105,6 @@ export type Workout = {
   volume_leaderboard_rank: number;
 };
 
-export type WorkoutsResponse = {
-  data: Workout[];
-};
-
 export type Instructor = {
   active: boolean;
   created: string;
@@ -126,3 +122,9 @@ export type Instructor = {
 };
 
 type HeroMetric = 'Pace' | 'Reps' | 'HeartRate';
+
+export type SuccessfulWorkoutsResponse = {
+  data: Workout[];
+};
+
+export type FailedWorkoutsResponse = Record<string, never>;
